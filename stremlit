@@ -1,0 +1,72 @@
+#스트림릿을 사용한 Citrix ADC 상태모니터링 보고서
+import requests
+import json
+import streamlit as st
+import pandas as pd
+from credential import *
+
+requests.packages.urllib3.disable_warnings()
+
+USERNAME = ""
+PASSWORD = ""
+
+devices = [
+    {"name": "ns", "ip": ""},
+    {"name": "ns", "ip": ""},
+
+]
+
+cred_headers = {
+    'X-NITRO-USER': USERNAME,
+    'X-NITRO-PASS': PASSWORD
+}
+
+
+def get_stats(of_item, ip) -> dict:
+    url = f"https://{ip}/nitro/v1/stat/{of_item}"
+    response = requests.request("GET", url, headers=cred_headers, verify=False)
+    response_dict = json.loads(response.text)
+    return response_dict
+
+
+def main():
+    st.set_page_config(
+        page_title="Citrix ADC Status Dashboard",
+        page_icon="📊"
+
+    )
+
+    st.title("Netscaler 상태 점검서")
+
+    metrics = ["mgmtcpuusagepcnt", "pktcpuusagepcnt", "memusagepcnt", "rxmbitsrate", "txmbitsrate",
+               "httprequestsrate", "httpresponsesrate", "httprxrequestbytesrate", "httprxresponsebytesrate",
+               "tcpcurclientconn", "tcpcurserverconn", "tcpcurclientconnestablished", "tcpcurserverconnestablished",
+               "ssltransactionsrate", "sslsessionhitsrate", "cachehitsrate", "cachetothits", "disk0perusage",
+               "disk1perusage", "powersupply1status", "powersupply2status", "cpufan0speed", "systemfanspeed",
+               "cpu0temp", "internaltemp"]
+
+    for device in devices:
+        ip = device["ip"]
+        ns_stats = get_stats("ns", ip)
+        system_stats = get_stats("system", ip)
+
+        data = {
+            "점검내용": [],
+            "결과": []
+        }
+
+        for metric in metrics:
+            if metric in ns_stats['ns'] or metric in system_stats['system']:
+                value = ns_stats['ns'].get(metric, system_stats['system'].get(metric, None))
+                if value is not None:
+                    data["점검내용"].append(metric)
+                    data["결과"].append(str(value))  # Convert all values to strings
+
+        df = pd.DataFrame(data)
+
+        st.subheader(f"{device['name']} - {device['ip']}")
+        st.table(df)
+
+
+if __name__ == "__main__":
+    main()
