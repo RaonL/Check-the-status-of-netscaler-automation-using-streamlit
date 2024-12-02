@@ -8,11 +8,11 @@ from requests.packages.urllib3.util.ssl_ import create_urllib3_context
 # Constants
 CIPHERS = 'ALL:@SECLEVEL=1'
 USERNAME = "nsroot"
-PASSWORD = "N@mu70331"
+PASSWORD = ""
 DEFAULT_TIMEOUT = 5
 
 DEVICES = [
-    {"name": "ns1", "ip": "10.10.11.2"}
+    {"name": "ns1", "ip": ""}
 ]
 
 METRICS = [
